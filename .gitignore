@@ -1,0 +1,9 @@
+node_modules/
+.expo/
+dist/
+.env
+.env.*
+!.env.example
+data/raw/
+*.log
+supabase/.temp/
