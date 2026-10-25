@@ -158,7 +158,7 @@ function ubicacion() {
   app.innerHTML = `
   <main class="pantalla">
     ${cabeceraPaso('¿Dónde es?', 2, '#/foto')}
-    <div class="mapa-caja"><div id="mapa"></div><span class="etiqueta">Mueve el pin para ajustar</span>
+    <div class="mapa-caja"><div id="mapa"></div><span class="etiqueta">Toca el mapa o arrastra el pin</span>
       <button class="redondo gps" id="gps" aria-label="Usar mi ubicación actual">${I.gps(20)}</button></div>
     <div class="tarjeta fila-ubic">${I.pin(20)}<div><b id="ubic-tit">Buscando tu ubicación…</b><span id="ubic-sub" class="tenue">Permite el acceso a la ubicación</span></div></div>
     <label class="campo"><span>Comentario <span class="tenue">(opcional)</span></span>
@@ -178,11 +178,13 @@ function ubicacion() {
     document.getElementById('ubic-sub')!.textContent =
       `${borrador.lat.toFixed(5)}, ${borrador.lon.toFixed(5)}${borrador.precision && !manual ? ` · GPS ±${Math.round(borrador.precision)} m` : ''}`;
   };
-  pin.on('dragend', () => {
-    const p = pin.getLatLng();
+  const fijar = (p: L.LatLng) => {
     Object.assign(borrador, { lat: p.lat, lon: p.lng, tieneUbicacion: true, precision: 0 });
     pintar(true);
-  });
+  };
+  pin.on('dragend', () => fijar(pin.getLatLng()));
+  // Tocar el mapa coloca el pin en ese punto.
+  mapa.on('click', (e: L.LeafletMouseEvent) => { pin.setLatLng(e.latlng); fijar(e.latlng); });
   const pedirGps = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -192,7 +194,7 @@ function ubicacion() {
       pintar(false);
     }, () => {
       document.getElementById('ubic-tit')!.textContent = 'No pudimos obtener tu ubicación';
-      document.getElementById('ubic-sub')!.textContent = 'Mueve el pin hasta el lugar del incendio';
+      document.getElementById('ubic-sub')!.textContent = 'Toca el mapa en el lugar del incendio';
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
   };
   if (borrador.tieneUbicacion) pintar(!borrador.precision); else pedirGps();
@@ -202,7 +204,7 @@ function ubicacion() {
 
   const boton = document.getElementById('enviar') as HTMLButtonElement;
   boton.addEventListener('click', async () => {
-    if (!borrador.tieneUbicacion) { aviso('Mueve el pin al lugar del incendio o activa tu ubicación.'); return; }
+    if (!borrador.tieneUbicacion) { aviso('Toca el mapa en el lugar del incendio o activa tu ubicación.'); return; }
     boton.disabled = true; boton.textContent = 'Enviando…';
     try {
       const r = await enviarReporte({

@@ -25,22 +25,43 @@ export function escapar(t: string): string {
   return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Botones que se muestran según el estado actual (solo hacia adelante). */
-export function teclado(incidenteId: string, estado: Estado) {
-  if (estado === 'extinguido' || estado === 'falso') return { inline_keyboard: [] };
-  const siguientes = ORDEN.slice(ORDEN.indexOf(estado) + 1);
-  const boton = (e: Estado) => ({ text: ETIQUETA_ESTADO[e], callback_data: `e|${incidenteId}|${e}` });
-  const filas: { text: string; callback_data: string }[][] = [];
-  for (let i = 0; i < siguientes.length; i += 2) filas.push(siguientes.slice(i, i + 2).map(boton));
-  filas.push([boton('falso')]);
+export const ES_CIERRE = (e: Estado) => e === 'controlado' || e === 'extinguido' || e === 'falso';
+
+type Boton = { text: string; callback_data: string };
+
+/** Botones según el estado actual (solo hacia adelante) y, si aplica, "Deshacer". */
+export function teclado(incidenteId: string, estado: Estado, deshacer = false) {
+  const filas: Boton[][] = [];
+  if (estado !== 'extinguido' && estado !== 'falso') {
+    const siguientes = ORDEN.slice(ORDEN.indexOf(estado) + 1);
+    const boton = (e: Estado) => ({ text: ETIQUETA_ESTADO[e], callback_data: `e|${incidenteId}|${e}` });
+    for (let i = 0; i < siguientes.length; i += 2) filas.push(siguientes.slice(i, i + 2).map(boton));
+    filas.push([boton('falso')]);
+  }
+  if (deshacer) filas.push([{ text: 'Deshacer último cambio', callback_data: `u|${incidenteId}` }]);
   return { inline_keyboard: filas };
 }
 
+/** Botones de la pregunta de confirmación para cerrar un incendio. */
+export function tecladoConfirmar(incidenteId: string, estado: Estado) {
+  return { inline_keyboard: [[
+    { text: `Sí, ${ETIQUETA_ESTADO[estado].toLowerCase()}`, callback_data: `c|${incidenteId}|${estado}` },
+    { text: 'Cancelar', callback_data: `x|${incidenteId}` },
+  ]] };
+}
+
+export type Accion =
+  | { tipo: 'estado' | 'confirmar'; incidenteId: string; estado: Estado }
+  | { tipo: 'deshacer' | 'cancelar'; incidenteId: string };
+
 /** Lee el dato de un botón. Devuelve null si no es nuestro. */
-export function leerBoton(data: string | undefined): { incidenteId: string; estado: Estado } | null {
+export function leerBoton(data: string | undefined): Accion | null {
   if (!data) return null;
-  const m = /^e\|([0-9a-f-]{36})\|(recibido|en_camino|controlado|extinguido|falso)$/.exec(data);
-  return m ? { incidenteId: m[1], estado: m[2] as Estado } : null;
+  const m = /^([ec])\|([0-9a-f-]{36})\|(recibido|en_camino|controlado|extinguido|falso)$/.exec(data);
+  if (m) return { tipo: m[1] === 'e' ? 'estado' : 'confirmar', incidenteId: m[2], estado: m[3] as Estado };
+  const n = /^([ux])\|([0-9a-f-]{36})$/.exec(data);
+  if (n) return { tipo: n[1] === 'u' ? 'deshacer' : 'cancelar', incidenteId: n[2] };
+  return null;
 }
 
 export interface DatosAlerta {

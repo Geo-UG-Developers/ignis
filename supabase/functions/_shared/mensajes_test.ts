@@ -1,5 +1,5 @@
 import { deepStrictEqual as assertEquals, ok as assert } from 'node:assert';
-import { leerBoton, leerComando, teclado, textoAlerta } from './mensajes.ts';
+import { leerBoton, leerComando, teclado, tecladoConfirmar, textoAlerta } from './mensajes.ts';
 
 const ID = '11111111-2222-4333-8444-555555555555';
 
@@ -7,6 +7,7 @@ Deno.test('botones avanzan solo hacia adelante', () => {
   const t = teclado(ID, 'recibido').inline_keyboard.flat().map((b) => b.text);
   assertEquals(t, ['En camino', 'Controlado', 'Extinguido', 'Falso o duplicado']);
   assertEquals(teclado(ID, 'extinguido').inline_keyboard, []);
+  assertEquals(teclado(ID, 'extinguido', true).inline_keyboard.flat().map((b) => b.text), ['Deshacer último cambio']);
 });
 
 Deno.test('callback_data cabe en 64 bytes y se lee de vuelta', () => {
@@ -15,6 +16,12 @@ Deno.test('callback_data cabe en 64 bytes y se lee de vuelta', () => {
     assert(leerBoton(b.callback_data));
   }
   assertEquals(leerBoton(`e|${ID}|nuevo`), null);
+  assertEquals(leerBoton(`u|${ID}`), { tipo: 'deshacer', incidenteId: ID });
+  assertEquals(leerBoton(`c|${ID}|extinguido`), { tipo: 'confirmar', incidenteId: ID, estado: 'extinguido' });
+  for (const b of [...teclado(ID, 'recibido', true).inline_keyboard.flat(), ...tecladoConfirmar(ID, 'en_camino').inline_keyboard.flat()]) {
+    assert(new TextEncoder().encode(b.callback_data).length <= 64, b.callback_data);
+    assert(leerBoton(b.callback_data), b.callback_data);
+  }
   assertEquals(leerBoton('basura'), null);
 });
 

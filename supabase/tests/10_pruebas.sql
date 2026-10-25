@@ -168,4 +168,37 @@ begin
   raise notice 'OK 9 telegram';
 end $$;
 
+-- 10. Deshacer y ocultar cierres recientes al ciudadano.
+do $$
+declare r jsonb; v_inc uuid; msg text; d jsonb;
+begin
+  r := registrar_reporte('22222222-2222-4222-8222-222222222222', 'forestal', 21.0100, -101.2700);
+  v_inc := (r->>'incidente_id')::uuid;
+  perform cambiar_estado(v_inc, 'recibido', '00000000-0000-4000-a000-000000000001', 'Juan', 'telegram');
+  perform cambiar_estado(v_inc, 'extinguido', '00000000-0000-4000-a000-000000000001', 'Juan', 'telegram');
+  assert puede_deshacer(v_inc), 'se puede deshacer recién hecho';
+
+  -- Otra institución no puede deshacer
+  begin perform deshacer_estado(v_inc, '00000000-0000-4000-a000-000000000002', 'X'); exception when others then msg := sqlerrm; end;
+  assert msg = 'sin_permiso', 'solo quien hizo el cambio';
+
+  d := deshacer_estado(v_inc, '00000000-0000-4000-a000-000000000001', 'Juan');
+  assert d->>'deshecho' = 'extinguido' and d->>'estado' = 'recibido', 'vuelve a recibido: ' || d::text;
+  assert (select estado from incidentes where id = v_inc) = 'recibido';
+
+  -- Cierre de hace 1 minuto: el ciudadano todavía no lo ve
+  perform cambiar_estado(v_inc, 'controlado', '00000000-0000-4000-a000-000000000001', 'Juan', 'telegram');
+  update eventos_estado set creado_en = now() - interval '10 minutes' where incidente_id = v_inc and estado = 'nuevo';
+  update eventos_estado set creado_en = now() - interval '5 minutes' where incidente_id = v_inc and estado = 'recibido';
+  perform set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+  assert (select estado from mis_reportes() where folio = r->>'folio') = 'recibido', 'cierre oculto 2 min';
+  update eventos_estado set creado_en = now() - interval '3 minutes' where incidente_id = v_inc and estado = 'controlado';
+  assert (select estado from mis_reportes() where folio = r->>'folio') = 'controlado', 'cierre visible después';
+
+  msg := null;
+  begin perform deshacer_estado(v_inc, '00000000-0000-4000-a000-000000000001', 'Juan'); exception when others then msg := sqlerrm; end;
+  assert msg = 'tiempo_vencido', 'después de 2 min no se deshace';
+  raise notice 'OK 10 deshacer';
+end $$;
+
 select 'TODAS LAS PRUEBAS PASARON' as resultado;

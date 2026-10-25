@@ -46,9 +46,10 @@ export async function enviarAlertas(incidenteId: string, foto?: Blob) {
 export async function actualizarAlertas(incidenteId: string) {
   const d = await datosAlerta(incidenteId);
   if (!d) return;
+  const { data: deshacer } = await db.rpc('puede_deshacer', { p_incidente: incidenteId });
   for (const t of d.telegram.filter((x) => x.message_id)) {
     const base = { chat_id: t.chat_id, message_id: t.message_id, parse_mode: 'HTML',
-                   reply_markup: teclado(d.incidente_id, d.estado) };
+                   reply_markup: teclado(d.incidente_id, d.estado, Boolean(deshacer)) };
     const r = await tg('editMessageCaption', { ...base, caption: texto(d) });
     if (!r.ok && /no caption|there is no caption/i.test(r.description ?? '')) {
       await tg('editMessageText', { ...base, text: texto(d), disable_web_page_preview: true });
