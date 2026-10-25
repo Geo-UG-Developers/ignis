@@ -1,4 +1,5 @@
 name: Servidor (pruebas e instalación en Supabase)
+# Requiere los secretos SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF y SUPABASE_DB_PASSWORD.
 
 on:
   push:
