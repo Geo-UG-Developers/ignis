@@ -4,30 +4,31 @@ Using access token from env var...
 Supabase CLI 2.122.0
 Using profile: supabase (supabase.co)
 Using access token from env var...
-2026/10/25 09:36:51 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa
-2026/10/25 09:36:51 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/api-keys
-2026/10/25 09:36:52 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/storage
-2026/10/25 09:36:52 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/database/pooler
-2026/10/25 09:36:52 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/rest/v1/
-2026/10/25 09:36:53 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/auth/v1/health
-2026/10/25 09:36:53 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/storage/v1/version
+2026/10/25 09:54:48 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa
+2026/10/25 09:54:48 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/api-keys
+2026/10/25 09:54:49 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/storage
+2026/10/25 09:54:49 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/database/pooler
+2026/10/25 09:54:49 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/rest/v1/
+2026/10/25 09:54:51 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/auth/v1/health
+2026/10/25 09:54:51 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/storage/v1/version
 Finished supabase link.
-Warning: supabase db push will target the local database by default in the next major version. Pass --linked to keep targeting the linked project.
 Connecting to remote database...
 Do you want to push these migrations to the remote database?
- • 20261025000100_esquema.sql
- • 20261025000200_funciones.sql
- • 20261025000300_seguridad.sql
+ • 20261025000400_telegram.sql
  [Y/n] y
-Applying migration 20261025000100_esquema.sql...
-Applying migration 20261025000200_funciones.sql...
-Applying migration 20261025000300_seguridad.sql...
-Do you want to seed the remote database with these files?
- • supabase/seed/00_regiones.sql
- • supabase/seed/10_municipios_gto.sql
- • supabase/seed/20_piloto.sql
- [Y/n] y
-Seeding data from supabase/seed/00_regiones.sql...
-Seeding data from supabase/seed/10_municipios_gto.sql...
-Seeding data from supabase/seed/20_piloto.sql...
+Applying migration 20261025000400_telegram.sql...
+Seed files are up to date.
 Finished supabase db push.
+Deploying Function: reportar
+Uploading asset (reportar): supabase/functions/reportar/index.ts
+Uploading asset (reportar): supabase/functions/_shared/alerta.ts
+Uploading asset (reportar): supabase/functions/_shared/mensajes.ts
+Uploading asset (reportar): supabase/functions/_shared/servicios.ts
+Deploying Function: telegram
+Uploading asset (telegram): supabase/functions/telegram/index.ts
+Uploading asset (telegram): supabase/functions/_shared/alerta.ts
+Uploading asset (telegram): supabase/functions/_shared/mensajes.ts
+Uploading asset (telegram): supabase/functions/_shared/servicios.ts
+Deployed Functions on project omxujxhbvdkvnfrgtvqa: reportar, telegram
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/omxujxhbvdkvnfrgtvqa/functions
+Falta el secreto TELEGRAM_BOT_TOKEN
