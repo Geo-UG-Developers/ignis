@@ -86,7 +86,13 @@ export async function comprimir(archivo: File): Promise<Blob> {
 export interface PuntoHistorico { anio: number; mes: number; tipo: Tipo; municipio: string | null; lat: number; lon: number; confiable: boolean; }
 
 export async function historicoPublico(desde = 2021, hasta = 2100): Promise<PuntoHistorico[]> {
-  const { data, error } = await db.rpc('historico_publico', { p_desde: desde, p_hasta: hasta });
-  if (error) throw error;
-  return (data ?? []) as PuntoHistorico[];
+  // El servidor entrega máximo 1000 filas por consulta: se pide por páginas.
+  const todos: PuntoHistorico[] = [];
+  for (let desdeFila = 0; ; desdeFila += 1000) {
+    const { data, error } = await db.rpc('historico_publico', { p_desde: desde, p_hasta: hasta })
+      .range(desdeFila, desdeFila + 999);
+    if (error) throw error;
+    todos.push(...((data ?? []) as PuntoHistorico[]));
+    if (!data || data.length < 1000) return todos;
+  }
 }
