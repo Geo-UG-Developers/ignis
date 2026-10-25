@@ -47,6 +47,9 @@ jobs:
             echo "::warning::Faltan secretos de Supabase en GitHub (Settings > Secrets and variables > Actions). No se instala nada."
             echo "listo=no" >> "$GITHUB_OUTPUT"
           else
+            # Acepta la clave sola o la URL completa del proyecto.
+            REF=$(echo "$PROJECT_REF" | sed -E 's#^https?://##; s#\.supabase\.co.*$##; s#^.*/project/##; s#/.*$##')
+            echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
             echo "listo=si" >> "$GITHUB_OUTPUT"
           fi
       - uses: supabase/setup-cli@v1
