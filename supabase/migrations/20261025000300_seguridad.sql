@@ -20,7 +20,7 @@ revoke execute on all functions in schema public from public, anon, authenticate
 
 -- Institución del usuario del panel (null si no es personal).
 create or replace function mi_institucion() returns uuid
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public, extensions as $$
   select institucion_id from miembros_panel where user_id = auth.uid()
 $$;
 
@@ -44,7 +44,7 @@ create policy panel_vinculos on incidente_institucion for select to authenticate
   using (institucion_id = mi_institucion());
 
 create or replace function mi_region() returns text
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public, extensions as $$
   select i.region_id from miembros_panel m join instituciones i on i.id = m.institucion_id
   where m.user_id = auth.uid()
 $$;

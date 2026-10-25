@@ -31,7 +31,7 @@ create or replace function registrar_reporte(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_punto       geometry(Point, 4326);
@@ -133,7 +133,7 @@ create or replace function cambiar_estado(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_inc incidentes%rowtype;
@@ -186,7 +186,7 @@ create or replace function cambiar_estado_panel(p_incidente uuid, p_estado estad
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_inst uuid;
@@ -209,7 +209,7 @@ create or replace function escalar_pendientes()
 returns table (incidente_id uuid, folio text, institucion_id uuid, telegram_chat_id bigint, correo text, es_respaldo boolean)
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
   return query
@@ -260,7 +260,7 @@ returns table (reporte_id uuid, folio text, tipo tipo_incendio, municipio text,
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select r.id, i.folio, r.tipo, i.municipio, i.estado, r.creado_en,
          coalesce((select jsonb_agg(jsonb_build_object('estado', e.estado, 'en', e.creado_en,
@@ -282,7 +282,7 @@ returns table (id uuid, tipo tipo_incendio, estado estado_incidente, lat double 
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select i.id, i.tipo, i.estado,
          round(st_y(i.ubicacion)::numeric, 3)::double precision,
@@ -301,7 +301,7 @@ create or replace function registrar_push(p_token text, p_plataforma text)
 returns void
 language sql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   insert into dispositivos_push (autor, token, plataforma)
   values (auth.uid(), p_token, p_plataforma)

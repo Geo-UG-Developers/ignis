@@ -1,0 +1,9 @@
+# Configuración mínima del CLI de Supabase para IGNIS.
+project_id = "ignis"
+
+[db]
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed/00_regiones.sql", "./seed/10_municipios_gto.sql", "./seed/20_piloto.sql"]
