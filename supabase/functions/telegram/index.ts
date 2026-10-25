@@ -47,6 +47,15 @@ async function mensaje(m: any) {
   if (c.comando === 'start' || c.comando === 'ayuda' || c.comando === 'help') {
     return responder(AYUDA);
   }
+  if (c.comando === 'vigia') {
+    if (m.chat.type !== 'private') return responder('Escríbeme /vigia en un chat privado.');
+    const { data: v } = await db.from('config_privada').select('valor').eq('clave', 'vigia').maybeSingle();
+    const actual = (v?.valor as { chat_id?: number } | null)?.chat_id;
+    if (actual && actual !== chat) return responder('El vigía ya está asignado a otra persona.');
+    if (actual === chat) { await db.from('config_privada').delete().eq('clave', 'vigia'); return responder('Listo: ya no te enviaré los avisos del vigía.'); }
+    await db.from('config_privada').upsert({ clave: 'vigia', valor: { chat_id: chat } });
+    return responder('Listo: te avisaré aquí si algo deja de funcionar, y cada lunes te mandaré «IGNIS funcionando».');
+  }
   if (c.comando === 'vincular') {
     if (m.chat.type === 'private') return responder('Usa /vincular dentro del grupo de la institución.');
     const miembro = await tg('getChatMember', { chat_id: chat, user_id: m.from.id });

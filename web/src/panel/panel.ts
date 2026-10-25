@@ -6,6 +6,7 @@ import { I } from '../iconos';
 import type { Estado, Tipo } from '../api';
 import { accion, dbp, detalle, estadisticas, historico, historicoResumen, incidentes, urlsFotos, yo,
   type Detalle, type Incidente, type Yo } from './datos';
+import { vistaGuardia } from './guardia';
 import { activarTips, apiladas, barras, COLOR_TIPO, leyendaTipos, NOMBRE_TIPO, ORDEN_TIPOS } from './graficas';
 
 const BASE = import.meta.env.BASE_URL;
@@ -100,6 +101,7 @@ async function salir() {
 // ---------------------------------------------------------------- estructura
 const SECCIONES = [
   { id: 'activos', txt: 'Reportes activos', ic: () => I.pin(18) },
+  { id: 'guardia', txt: 'Tablero de guardia', ic: () => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>` },
   { id: 'historial', txt: 'Historial', ic: () => I.lista(18) },
   { id: 'estadisticas', txt: 'Estadísticas', ic: () => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>` },
   { id: 'mapa', txt: 'Mapa histórico', ic: () => I.mapa(18) },
@@ -446,9 +448,11 @@ async function vistaMapa() {
 }
 
 // ---------------------------------------------------------------- rutas
-const VISTAS: Record<string, () => void> = { activos: vistaActivos, historial: vistaHistorial, estadisticas: vistaEstadisticas, mapa: vistaMapa };
+let salirGuardia: (() => void) | null = null;
+const VISTAS: Record<string, () => void> = { guardia: () => { salirGuardia = vistaGuardia(raiz, mio!.institucion, aviso); }, activos: vistaActivos, historial: vistaHistorial, estadisticas: vistaEstadisticas, mapa: vistaMapa };
 function ir() {
   if (!mio) return;
+  if (salirGuardia) { salirGuardia(); salirGuardia = null; }
   limpiar();
   if (location.hash === '#historial') cacheHist = null;   // datos frescos al entrar
   (VISTAS[location.hash.slice(1)] ?? vistaActivos)();

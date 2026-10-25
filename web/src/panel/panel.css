@@ -195,3 +195,26 @@ th.num .orden { text-align: right; }
   .buscar input { width: 100%; }
 }
 .tabla-caja td:nth-child(-n+2), .tabla-caja td.num { white-space: nowrap; }
+
+/* Tablero de guardia (TV de la estación) */
+.modo-guardia { background: #0F0D0C; }
+.guardia { min-height: 100dvh; display: flex; flex-direction: column; background: #0F0D0C; color: #fff; }
+.g-barra { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #1C1917; flex-wrap: wrap; }
+.g-logo { height: 40px; } .g-tit { display: flex; flex-direction: column; flex: 1; min-width: 180px; }
+.g-tit b { font-size: 22px; letter-spacing: .08em; } .g-tit span { color: #A8A29E; font-size: 14px; }
+.sin-red { background: var(--rojo); color: #fff; padding: 1px 8px; border-radius: 6px; }
+.g-reloj { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.g-btn { background: transparent; color: #fff; border-color: #44403C; } .g-activar { background: var(--rojo); border-color: var(--rojo); }
+.g-cuerpo { flex: 1; display: grid; grid-template-columns: minmax(360px, 1fr) 1.2fr; gap: 14px; padding: 14px; }
+.g-lista { display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+.g-mapa { border-radius: 16px; overflow: hidden; min-height: 360px; } #g-mapa { width: 100%; height: 100%; min-height: 360px; }
+.g-tarjeta { display: flex; gap: 14px; align-items: center; background: #1C1917; border-left: 8px solid var(--c); border-radius: 14px; padding: 14px; }
+.g-tarjeta.nuevo { animation: g-alerta 1.2s infinite; } @keyframes g-alerta { 50% { background: #4A1512; } }
+.g-info { flex: 1; display: flex; flex-direction: column; gap: 2px; } .g-info b { font-size: 22px; } .g-info span { color: #D6D3D1; }
+.g-der { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.g-min { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; } .g-min.verde { color: #86EFAC; } .g-min.ambar { color: #FCD34D; } .g-min.rojo { color: #FCA5A5; }
+.g-ok { background: var(--rojo); border-color: var(--rojo); color: #fff; min-height: 46px; font-size: 16px; }
+.g-vacio { padding: 50px; text-align: center; display: flex; flex-direction: column; gap: 6px; color: #A8A29E; } .g-vacio b { color: #fff; font-size: 22px; }
+.g-pie { display: flex; gap: 24px; padding: 12px 18px; background: #1C1917; color: #D6D3D1; font-size: 16px; } .g-pie b { color: #fff; font-size: 20px; }
+.parpadea { animation: g-pulso 1s infinite; } @keyframes g-pulso { 50% { stroke-width: 9; } }
+@media (max-width: 820px) { .g-cuerpo { grid-template-columns: 1fr; } }
