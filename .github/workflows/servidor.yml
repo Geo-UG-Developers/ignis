@@ -22,6 +22,11 @@ jobs:
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Pruebas del bot
+        run: cd supabase/functions && deno test --allow-read _shared/
       - name: Correr pruebas
         env:
           PGHOST: localhost
@@ -67,7 +72,31 @@ jobs:
         if: steps.secretos.outputs.listo == 'si'
         run: |
           set -o pipefail
-          supabase db push --include-seed --password "$SUPABASE_DB_PASSWORD" --yes 2>&1 | sed "s/$SUPABASE_DB_PASSWORD/***/g" | tail -80 | tee -a "$RUNNER_TEMP/registro.txt"
+          supabase db push --linked --include-seed --password "$SUPABASE_DB_PASSWORD" --yes 2>&1 | sed "s/$SUPABASE_DB_PASSWORD/***/g" | tail -80 | tee -a "$RUNNER_TEMP/registro.txt"
+      - name: Instalar funciones del servidor
+        if: steps.secretos.outputs.listo == 'si'
+        run: |
+          set -o pipefail
+          supabase functions deploy --project-ref "$PROJECT_REF" --use-api 2>&1 | tail -20 | tee -a "$RUNNER_TEMP/registro.txt"
+      - name: Configurar el bot de Telegram
+        if: steps.secretos.outputs.listo == 'si'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "Falta el secreto TELEGRAM_BOT_TOKEN" | tee -a "$RUNNER_TEMP/registro.txt"; exit 0
+          fi
+          supabase secrets set --project-ref "$PROJECT_REF" TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" 2>&1 | tail -3 | tee -a "$RUNNER_TEMP/registro.txt"
+          SECRETO=$(printf 'ignis-webhook:%s' "$TELEGRAM_BOT_TOKEN" | sha256sum | cut -c1-48)
+          API="https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN"
+          {
+            echo "--- Bot"
+            curl -s "$API/getMe"; echo
+            echo "--- Webhook"
+            curl -s "$API/setWebhook" -d "url=https://$PROJECT_REF.supabase.co/functions/v1/telegram" \
+              -d "secret_token=$SECRETO" --data-urlencode 'allowed_updates=["message","callback_query"]'; echo
+            curl -s "$API/getWebhookInfo"; echo
+          } | tee -a "$RUNNER_TEMP/registro.txt"
       - name: Guardar registro (para diagnóstico)
         if: always() && steps.secretos.outputs.listo == 'si'
         run: |

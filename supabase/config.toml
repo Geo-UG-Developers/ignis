@@ -7,3 +7,11 @@ major_version = 15
 [db.seed]
 enabled = true
 sql_paths = ["./seed/00_regiones.sql", "./seed/10_municipios_gto.sql", "./seed/20_piloto.sql"]
+
+# Las funciones validan la sesión ellas mismas (Telegram no manda JWT y la app
+# necesita la petición previa CORS sin JWT).
+[functions.telegram]
+verify_jwt = false
+
+[functions.reportar]
+verify_jwt = false

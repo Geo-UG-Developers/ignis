@@ -150,4 +150,22 @@ begin
 end $$;
 reset role;
 
+-- 9. Vinculación de Telegram y datos de la alerta.
+do $$
+declare v jsonb; d jsonb; cod text; msg text;
+begin
+  select codigo_vinculo into cod from instituciones where id = '00000000-0000-4000-a000-000000000001';
+  assert length(cod) = 8, 'código de 8 caracteres';
+  v := vincular_chat(lower(cod), -100123);
+  assert v->>'nombre' like 'Bomberos%', 'vincula con minúsculas';
+  begin perform vincular_chat('NOEXISTE', -100999); exception when others then msg := sqlerrm; end;
+  assert msg = 'codigo_invalido', 'código inválido';
+  select datos_alerta(incidente_id) into d from reportes where autor = '11111111-1111-4111-8111-111111111111' order by creado_en limit 1;
+  assert d->>'municipio' = 'Guanajuato' and (d->>'lat')::numeric between 21 and 21.1, 'datos_alerta: ' || d::text;
+  assert d->>'comentario' = 'humo en el cerro', 'comentario del primer reporte';
+  assert jsonb_array_length(d->'historial') = 2, 'historial sin "nuevo"';
+  assert (d->'telegram'->0->>'chat_id')::bigint = -100123, 'chat vinculado';
+  raise notice 'OK 9 telegram';
+end $$;
+
 select 'TODAS LAS PRUEBAS PASARON' as resultado;
