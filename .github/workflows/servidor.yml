@@ -32,6 +32,8 @@ jobs:
     name: Instalar en Supabase
     needs: pruebas
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -53,7 +55,21 @@ jobs:
           version: latest
       - name: Conectar con el proyecto
         if: steps.secretos.outputs.listo == 'si'
-        run: supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          set -o pipefail
+          echo "Ref del proyecto: ${#PROJECT_REF} caracteres, empieza con ${PROJECT_REF:0:4}" | tee -a "$RUNNER_TEMP/registro.txt"
+          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --debug 2>&1 | sed "s/$SUPABASE_DB_PASSWORD/***/g" | tail -60 | tee -a "$RUNNER_TEMP/registro.txt"
       - name: Aplicar migraciones y datos base
         if: steps.secretos.outputs.listo == 'si'
-        run: supabase db push --include-seed --password "$SUPABASE_DB_PASSWORD" --yes
+        run: |
+          set -o pipefail
+          supabase db push --include-seed --password "$SUPABASE_DB_PASSWORD" --yes 2>&1 | sed "s/$SUPABASE_DB_PASSWORD/***/g" | tail -80 | tee -a "$RUNNER_TEMP/registro.txt"
+      - name: Guardar registro (para diagnóstico)
+        if: always() && steps.secretos.outputs.listo == 'si'
+        run: |
+          cp "$RUNNER_TEMP/registro.txt" /tmp/registro.txt 2>/dev/null || echo "sin registro" > /tmp/registro.txt
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git fetch -q origin registro 2>/dev/null && git checkout -q registro || git checkout -q --orphan registro
+          git rm -rq --cached . 2>/dev/null || true
+          cp /tmp/registro.txt instalacion.txt
+          git add instalacion.txt && git commit -qm "Registro de instalación $GITHUB_RUN_ID" && git push -q origin registro
