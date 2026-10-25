@@ -14,6 +14,7 @@ export interface Incidente {
   id: string; folio: string; tipo: Tipo; estado: Estado; municipio: string | null; lat: number; lon: number;
   num_reportes: number; confirmado_satelite: boolean; creado_en: string; actualizado_en: string;
   es_respaldo: boolean; minutos_sin_confirmar: number | null; ultimo_actor: string | null;
+  min_a_recibido: number | null; min_a_control: number | null;
 }
 export interface Detalle {
   id: string; folio: string; tipo: Tipo; estado: Estado; municipio: string | null; lat: number; lon: number;

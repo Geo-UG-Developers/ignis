@@ -29,6 +29,8 @@ const ERRORES: Record<string, string> = {
 };
 
 let mio: Yo | null = null;
+let correo = '';
+const I_SALIR = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>`;
 let seleccion: string | null = null;
 let mapa: L.Map | null = null;
 let ciclo: number | undefined;
@@ -39,6 +41,7 @@ function aviso(txt: string, error = false) {
   document.body.appendChild(t); setTimeout(() => t.remove(), 4500);
 }
 function limpiar() {
+  document.querySelector('.cajon-fondo')?.remove();
   const tip = document.getElementById('tip-g'); if (tip) tip.style.opacity = '0';
   if (mapa) { mapa.remove(); mapa = null; }
   if (ciclo) { clearInterval(ciclo); ciclo = undefined; }
@@ -77,6 +80,7 @@ function pantallaAcceso(mensaje = '') {
 async function iniciar() {
   const { data } = await dbp.auth.getSession();
   if (!data.session || data.session.user.is_anonymous) return pantallaAcceso();
+  correo = data.session.user.email ?? '';
   try { mio = await yo(); } catch { mio = null; }
   if (!mio) {
     raiz.innerHTML = `<main class="acceso"><div class="caja-acceso"><h1>Cuenta sin institución</h1>
@@ -87,7 +91,11 @@ async function iniciar() {
   }
   ir();
 }
-async function salir() { await dbp.auth.signOut(); pantallaAcceso(); }
+async function salir() {
+  limpiar(); cerrarCajon();
+  await dbp.auth.signOut(); mio = null; seleccion = null; history.replaceState(null, '', location.pathname);
+  pantallaAcceso('');
+}
 
 // ---------------------------------------------------------------- estructura
 const SECCIONES = [
@@ -104,14 +112,18 @@ function marco(activa: string, titulo: string, sub: string, contenido: string, a
       <nav aria-label="Secciones">${SECCIONES.map((s) => `<a href="#${s.id}" class="${s.id === activa ? 'on' : ''}" ${s.id === activa ? 'aria-current="page"' : ''}>${s.ic()}<span>${s.txt}</span><em id="n-${s.id}"></em></a>`).join('')}</nav>
       <div class="pie-lateral"><b>${esc(mio!.institucion)}</b><span>${esc(mio!.municipios.join(', ') || mio!.region)}</span>
         <span>${mio!.es_admin ? 'Administrador · puede cerrar incendios' : 'Integrante'}</span>
-        <button class="enlace" id="salir">Salir</button></div>
+        <button class="btn salir-lat" id="salir">${I_SALIR} Cerrar sesión</button></div>
     </aside>
     <main class="contenido">
-      <header class="cabecera"><div><h1>${titulo}</h1><p class="tenue">${sub}</p></div><div class="acciones">${acciones}</div></header>
+      <header class="cabecera"><div><h1>${titulo}</h1><p class="tenue">${sub}</p></div>
+        <div class="acciones">${acciones}
+          <div class="usuario"><span title="${esc(correo)}">${esc(correo)}</span>
+            <button class="btn" id="salir-cab">${I_SALIR} Cerrar sesión</button></div></div></header>
       ${contenido}
     </main>
   </div>`;
   document.getElementById('salir')!.addEventListener('click', salir);
+  document.getElementById('salir-cab')!.addEventListener('click', salir);
 }
 
 // ---------------------------------------------------------------- activos
@@ -121,7 +133,7 @@ async function vistaActivos() {
     <section class="tres">
       <div class="col-lista" id="lista"><p class="tenue">Cargando…</p></div>
       <div class="col-mapa"><div id="mapa"></div></div>
-      <div class="col-detalle" id="detalle"><div class="vacio-detalle">${I.pin(28)}<p>Elige un reporte de la lista o del mapa para ver fotos, datos y cambiar su estado.</p></div></div>
+      <div class="col-detalle" id="detalle">${vacioDetalle()}</div>
     </section>`);
   mapa = L.map('mapa', { zoomControl: true }).setView([20.95, -101.25], 10);
   capaBase(mapa);
@@ -160,11 +172,33 @@ async function vistaActivos() {
     if (seleccion) pintarDetalle(seleccion, false);
   };
   const elegir = (id: string) => { seleccion = id; pintar(); pintarDetalle(id, true); };
+  alCerrar = () => {
+    seleccion = null;
+    const caja = document.getElementById('detalle'); if (caja) caja.innerHTML = vacioDetalle();
+    document.querySelectorAll('.tarjeta-inc.sel').forEach((b) => b.classList.remove('sel'));
+  };
   await pintar();
   ciclo = window.setInterval(pintar, 15000);
 }
 
 let confirmando: Estado | null = null;
+let alCerrar: () => void = () => {};
+const vacioDetalle = () => `<div class="vacio-detalle">${I.pin(28)}<p>Elige un reporte de la lista o del mapa para ver fotos, datos y cambiar su estado.</p></div>`;
+function cerrarDetalle() { confirmando = null; alCerrar(); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (seleccion || document.querySelector('.cajon'))) cerrarDetalle(); });
+
+// Cajón lateral para ver el detalle desde el historial.
+function abrirCajon(id: string) {
+  cerrarCajon();
+  const fondo = document.createElement('div');
+  fondo.className = 'cajon-fondo';
+  fondo.innerHTML = '<aside class="cajon col-detalle" id="detalle" role="dialog" aria-modal="true" aria-label="Detalle del incendio"><p class="tenue">Cargando…</p></aside>';
+  fondo.addEventListener('click', (e) => { if (e.target === fondo) cerrarDetalle(); });
+  document.body.appendChild(fondo);
+  alCerrar = () => { cerrarCajon(); };
+  pintarDetalle(id, false);
+}
+function cerrarCajon() { document.querySelector('.cajon-fondo')?.remove(); }
 async function pintarDetalle(id: string, centrar: boolean) {
   const caja = document.getElementById('detalle');
   if (!caja) return;
@@ -176,7 +210,8 @@ async function pintarDetalle(id: string, centrar: boolean) {
   const abiertos = SIGUIENTE.slice(SIGUIENTE.indexOf(d.estado as Estado) + 1);
   const botones = d.estado === 'extinguido' || d.estado === 'falso' ? [] : [...(d.estado === 'nuevo' ? SIGUIENTE : abiertos), 'falso' as Estado];
   caja.innerHTML = `
-    <div class="det-cab"><span class="pill ${ESTADO[d.estado].cls}">${ESTADO[d.estado].txt}</span><span class="tenue">${esc(d.folio)}</span></div>
+    <div class="det-cab"><span class="pill ${ESTADO[d.estado].cls}">${ESTADO[d.estado].txt}</span><span class="tenue">${esc(d.folio)}</span>
+      <button class="cerrar-det" id="cerrar-det" aria-label="Cerrar detalle" title="Cerrar (Esc)">${I.cerrar(18)}</button></div>
     <h2>${esc(NOMBRE_TIPO[d.tipo])}</h2>
     <p class="tenue">${esc(d.municipio ?? 'Sin municipio')} · ${d.num_reportes} ${d.num_reportes === 1 ? 'reporte ciudadano' : 'reportes ciudadanos'}</p>
     ${fotos.length ? `<div class="fotos">${fotos.map((u) => `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="Foto del reporte"></a>`).join('')}</div>` : '<p class="tenue">Sin fotos.</p>'}
@@ -197,6 +232,7 @@ async function pintarDetalle(id: string, centrar: boolean) {
     ${d.reportes.map((r) => `<div class="rep"><span class="tenue">${fecha(r.creado_en)} · ${esc(NOMBRE_TIPO[r.tipo])}${r.precision_m ? ` · GPS ±${Math.round(r.precision_m)} m` : ''}</span>
       ${r.comentario ? `<p>«${esc(r.comentario)}»</p>` : ''}
       <span class="tenue">${r.nombre ? esc(r.nombre) : 'Anónimo'}${r.telefono ? ` · ${esc(r.telefono)}` : ''}</span></div>`).join('')}`;
+  document.getElementById('cerrar-det')?.addEventListener('click', cerrarDetalle);
   const hacer = async (cuerpo: Parameters<typeof accion>[0]) => {
     try { await accion(cuerpo); aviso('Listo. También se actualizó el grupo de Telegram.'); }
     catch (e) { aviso(ERRORES[(e as Error).message] ?? 'No se pudo guardar el cambio.', true); }
@@ -212,36 +248,134 @@ async function pintarDetalle(id: string, centrar: boolean) {
 }
 
 // ---------------------------------------------------------------- historial
-let filtro = { dias: 90, tipo: '', estado: '' };
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+const haceISO = (d: number) => new Date(Date.now() - d * 864e5).toISOString().slice(0, 10);
+let filtro = { desde: haceISO(90), hasta: hoyISO(), tipo: '', estado: '', municipio: '', texto: '' };
+let orden: { col: keyof Incidente; asc: boolean } = { col: 'creado_en', asc: false };
+let pagina = 0;
+const POR_PAGINA = 50;
+let cacheHist: { desde: string; xs: Incidente[] } | null = null;
+const dur = (m: number | null) => m == null ? '—' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+
 async function vistaHistorial() {
   const op = (v: string | number, t: string, sel: unknown) => `<option value="${v}" ${String(sel) === String(v) ? 'selected' : ''}>${t}</option>`;
-  marco('historial', 'Historial', 'Todos los incendios que atendió tu institución', `
+  const COLS: { col: keyof Incidente; txt: string; num?: boolean }[] = [
+    { col: 'creado_en', txt: 'Fecha' }, { col: 'folio', txt: 'Folio' }, { col: 'tipo', txt: 'Tipo' },
+    { col: 'municipio', txt: 'Municipio' }, { col: 'num_reportes', txt: 'Reportes', num: true },
+    { col: 'min_a_recibido', txt: 'A «Recibido»', num: true }, { col: 'min_a_control', txt: 'A controlado', num: true },
+    { col: 'estado', txt: 'Estado' }, { col: 'ultimo_actor', txt: 'Último cambio por' },
+  ];
+  marco('historial', 'Historial', 'Todos los incendios que atendió tu institución · toca una fila para ver el detalle', `
     <section class="filtros-p">
-      <label>Periodo<select id="f-dias">${op(30, 'Últimos 30 días', filtro.dias)}${op(90, 'Últimos 90 días', filtro.dias)}${op(365, 'Último año', filtro.dias)}${op(3650, 'Todo', filtro.dias)}</select></label>
+      <label class="buscar">Buscar<input id="f-texto" type="search" placeholder="Folio, municipio o persona" value="${esc(filtro.texto)}"></label>
+      <label>Desde<input id="f-desde" type="date" value="${filtro.desde}" max="${hoyISO()}"></label>
+      <label>Hasta<input id="f-hasta" type="date" value="${filtro.hasta}" max="${hoyISO()}"></label>
+      <div class="rapidos" role="group" aria-label="Periodos rápidos">
+        <button class="chip-r" data-dias="7">7 días</button><button class="chip-r" data-dias="30">30 días</button>
+        <button class="chip-r" data-dias="365">1 año</button></div>
       <label>Tipo<select id="f-tipo">${op('', 'Todos', filtro.tipo)}${ORDEN_TIPOS.map((t) => op(t, NOMBRE_TIPO[t], filtro.tipo)).join('')}</select></label>
       <label>Estado<select id="f-estado">${op('', 'Todos', filtro.estado)}${(Object.keys(ESTADO) as Estado[]).map((e) => op(e, ESTADO[e].txt, filtro.estado)).join('')}</select></label>
+      ${mio!.municipios.length > 1 ? `<label>Municipio<select id="f-municipio">${op('', 'Todos', filtro.municipio)}${mio!.municipios.map((m) => op(m, m, filtro.municipio)).join('')}</select></label>` : ''}
+      <button class="btn" id="limpiar-f">Limpiar filtros</button>
     </section>
-    <section class="tabla-caja"><table><thead><tr><th>Fecha</th><th>Folio</th><th>Tipo</th><th>Municipio</th><th>Reportes</th><th>Estado</th><th>Último cambio por</th></tr></thead>
-    <tbody id="filas"><tr><td colspan="7" class="tenue">Cargando…</td></tr></tbody></table></section>`,
-    `<button class="btn" id="csv">${I.flecha(16)} Exportar CSV</button>`);
-  ['dias', 'tipo', 'estado'].forEach((k) => document.getElementById(`f-${k}`)!.addEventListener('change', (e) => {
-    const v = (e.target as HTMLSelectElement).value;
-    filtro = { ...filtro, [k]: k === 'dias' ? Number(v) : v }; vistaHistorial();
+    <section class="resumen-f" id="resumen-f"></section>
+    <section class="tabla-caja"><table><thead><tr>${COLS.map((c) => `<th class="${c.num ? 'num' : ''}"><button class="orden ${orden.col === c.col ? 'on' : ''}" data-col="${c.col}"
+      aria-label="Ordenar por ${c.txt}">${c.txt}${orden.col === c.col ? (orden.asc ? ' ▲' : ' ▼') : ''}</button></th>`).join('')}<th></th></tr></thead>
+    <tbody id="filas"><tr><td colspan="10" class="tenue">Cargando…</td></tr></tbody></table></section>
+    <nav class="paginas" id="paginas" aria-label="Páginas"></nav>`,
+    `<button class="btn" id="csv">Exportar CSV</button><button class="btn" id="geojson">Exportar GeoJSON</button>`);
+
+  const recargar = () => { pagina = 0; vistaHistorial(); };
+  const leer = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value ?? '';
+  ['f-desde', 'f-hasta', 'f-tipo', 'f-estado', 'f-municipio'].forEach((id) => document.getElementById(id)?.addEventListener('change', () => {
+    filtro = { ...filtro, desde: leer('f-desde') || filtro.desde, hasta: leer('f-hasta') || filtro.hasta, tipo: leer('f-tipo'),
+      estado: leer('f-estado'), municipio: leer('f-municipio') };
+    recargar();
   }));
-  const xs = (await incidentes(new Date(Date.now() - filtro.dias * 864e5)))
-    .filter((x) => new Date(x.creado_en).getTime() >= Date.now() - filtro.dias * 864e5)
-    .filter((x) => (!filtro.tipo || x.tipo === filtro.tipo) && (!filtro.estado || x.estado === filtro.estado));
-  document.getElementById('filas')!.innerHTML = xs.length ? xs.map((x) => `<tr>
-    <td>${fecha(x.creado_en)}</td><td>${esc(x.folio)}</td><td><i class="cuad" style="background:${COLOR_TIPO[x.tipo]}"></i>${esc(NOMBRE_TIPO[x.tipo])}</td>
-    <td>${esc(x.municipio ?? '')}</td><td class="num">${x.num_reportes}</td><td><span class="pill ${ESTADO[x.estado].cls}">${ESTADO[x.estado].txt}</span></td>
-    <td>${esc(x.ultimo_actor ?? '')}</td></tr>`).join('') : '<tr><td colspan="7" class="tenue">No hay incendios con esos filtros.</td></tr>';
-  document.getElementById('csv')!.addEventListener('click', () => {
-    const cab = ['fecha', 'folio', 'tipo', 'municipio', 'latitud', 'longitud', 'reportes', 'estado', 'ultimo_cambio_por'];
-    const q = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const filas = xs.map((x) => [x.creado_en, x.folio, NOMBRE_TIPO[x.tipo], x.municipio, x.lat.toFixed(6), x.lon.toFixed(6), x.num_reportes, ESTADO[x.estado].txt, x.ultimo_actor].map(q).join(','));
-    const blob = new Blob(['﻿' + [cab.join(','), ...filas].join('\n')], { type: 'text/csv;charset=utf-8' });
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `ignis_historial_${new Date().toISOString().slice(0, 10)}.csv` });
+  let espera: number | undefined;
+  document.getElementById('f-texto')!.addEventListener('input', (e) => {
+    clearTimeout(espera);
+    espera = window.setTimeout(() => { filtro.texto = (e.target as HTMLInputElement).value; pagina = 0; pintarTabla(); }, 250);
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-dias]').forEach((b) => b.addEventListener('click', () => {
+    filtro = { ...filtro, desde: haceISO(Number(b.dataset.dias)), hasta: hoyISO() }; recargar();
+  }));
+  document.getElementById('limpiar-f')!.addEventListener('click', () => {
+    filtro = { desde: haceISO(90), hasta: hoyISO(), tipo: '', estado: '', municipio: '', texto: '' }; recargar();
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-col]').forEach((b) => b.addEventListener('click', () => {
+    const col = b.dataset.col as keyof Incidente;
+    orden = { col, asc: orden.col === col ? !orden.asc : col !== 'creado_en' };
+    vistaHistorial();
+  }));
+
+  if (!cacheHist || cacheHist.desde !== filtro.desde) {
+    try { cacheHist = { desde: filtro.desde, xs: await incidentes(new Date(`${filtro.desde}T00:00:00`)) }; }
+    catch { aviso('Sin conexión con el servidor.', true); return; }
+  }
+  const filtrados = () => {
+    const t = filtro.texto.trim().toLowerCase();
+    const fin = new Date(`${filtro.hasta}T23:59:59`).getTime(), ini = new Date(`${filtro.desde}T00:00:00`).getTime();
+    return cacheHist!.xs
+      .filter((x) => { const f = new Date(x.creado_en).getTime(); return f >= ini && f <= fin; })
+      .filter((x) => (!filtro.tipo || x.tipo === filtro.tipo) && (!filtro.estado || x.estado === filtro.estado)
+        && (!filtro.municipio || x.municipio === filtro.municipio))
+      .filter((x) => !t || [x.folio, x.municipio, x.ultimo_actor].some((v) => String(v ?? '').toLowerCase().includes(t)))
+      .sort((a, b) => {
+        const va = a[orden.col] ?? '', vb = b[orden.col] ?? '';
+        const r = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es');
+        return orden.asc ? r : -r;
+      });
+  };
+  const pintarTabla = () => {
+    const xs = filtrados();
+    const total = xs.length, paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+    pagina = Math.min(pagina, paginas - 1);
+    const vis = xs.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
+    const med = (vals: (number | null)[]) => { const v = vals.filter((x): x is number => x != null).sort((a, b) => a - b);
+      return v.length ? v[Math.floor((v.length - 1) / 2)] : null; };
+    document.getElementById('resumen-f')!.innerHTML = `<span><b>${total}</b> incendios</span>
+      <span>Tiempo típico a «Recibido»: <b>${dur(med(xs.map((x) => x.min_a_recibido)))}</b></span>
+      <span>Tiempo típico a controlado: <b>${dur(med(xs.map((x) => x.min_a_control)))}</b></span>
+      <span>Falsos o duplicados: <b>${xs.filter((x) => x.estado === 'falso').length}</b></span>`;
+    document.getElementById('filas')!.innerHTML = vis.length ? vis.map((x) => `<tr class="fila-click" data-id="${x.id}" tabindex="0">
+      <td>${fecha(x.creado_en)}</td><td>${esc(x.folio)}</td><td><i class="cuad" style="background:${COLOR_TIPO[x.tipo]}"></i>${esc(NOMBRE_TIPO[x.tipo])}</td>
+      <td>${esc(x.municipio ?? '')}</td><td class="num">${x.num_reportes}</td><td class="num">${dur(x.min_a_recibido)}</td><td class="num">${dur(x.min_a_control)}</td>
+      <td><span class="pill ${ESTADO[x.estado].cls}">${ESTADO[x.estado].txt}</span></td><td>${esc(x.ultimo_actor ?? '')}</td>
+      <td><a class="mini-enlace" href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noopener" title="Ver en Google Maps">Mapa</a></td></tr>`).join('')
+      : '<tr><td colspan="10" class="tenue">No hay incendios con esos filtros.</td></tr>';
+    document.querySelectorAll<HTMLTableRowElement>('tr[data-id]').forEach((tr) => {
+      const abrir = (e: Event) => { if ((e.target as HTMLElement).closest('a')) return; abrirCajon(tr.dataset.id!); };
+      tr.addEventListener('click', abrir);
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') abrir(e); });
+    });
+    document.getElementById('paginas')!.innerHTML = paginas > 1 ? `
+      <button class="btn" id="ant" ${pagina === 0 ? 'disabled' : ''}>Anterior</button>
+      <span>Página ${pagina + 1} de ${paginas}</span>
+      <button class="btn" id="sig" ${pagina >= paginas - 1 ? 'disabled' : ''}>Siguiente</button>` : '';
+    document.getElementById('ant')?.addEventListener('click', () => { pagina--; pintarTabla(); });
+    document.getElementById('sig')?.addEventListener('click', () => { pagina++; pintarTabla(); });
+  };
+  pintarTabla();
+
+  const descargar = (contenido: string, tipo: string, nombre: string) => {
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([contenido], { type: tipo })), download: nombre });
     a.click(); URL.revokeObjectURL(a.href);
+  };
+  const sello = new Date().toISOString().slice(0, 10);
+  document.getElementById('csv')!.addEventListener('click', () => {
+    const cab = ['fecha', 'folio', 'tipo', 'municipio', 'latitud', 'longitud', 'reportes', 'min_a_recibido', 'min_a_control', 'estado', 'ultimo_cambio_por'];
+    const q = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const filas = filtrados().map((x) => [x.creado_en, x.folio, NOMBRE_TIPO[x.tipo], x.municipio, x.lat.toFixed(6), x.lon.toFixed(6),
+      x.num_reportes, x.min_a_recibido, x.min_a_control, ESTADO[x.estado].txt, x.ultimo_actor].map(q).join(','));
+    descargar('﻿' + [cab.join(','), ...filas].join('\n'), 'text/csv;charset=utf-8', `ignis_historial_${sello}.csv`);
+  });
+  document.getElementById('geojson')!.addEventListener('click', () => {
+    const fc = { type: 'FeatureCollection', features: filtrados().map((x) => ({ type: 'Feature',
+      geometry: { type: 'Point', coordinates: [Number(x.lon.toFixed(6)), Number(x.lat.toFixed(6))] },
+      properties: { fecha: x.creado_en, folio: x.folio, tipo: NOMBRE_TIPO[x.tipo], municipio: x.municipio, reportes: x.num_reportes,
+        min_a_recibido: x.min_a_recibido, min_a_control: x.min_a_control, estado: ESTADO[x.estado].txt } })) };
+    descargar(JSON.stringify(fc), 'application/geo+json', `ignis_historial_${sello}.geojson`);
   });
 }
 
@@ -316,6 +450,7 @@ const VISTAS: Record<string, () => void> = { activos: vistaActivos, historial: v
 function ir() {
   if (!mio) return;
   limpiar();
+  if (location.hash === '#historial') cacheHist = null;   // datos frescos al entrar
   (VISTAS[location.hash.slice(1)] ?? vistaActivos)();
 }
 window.addEventListener('hashchange', ir);
