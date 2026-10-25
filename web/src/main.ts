@@ -107,7 +107,31 @@ function tarjetaAvisos(cajaId: string) {
 }
 
 // ---------------------------------------------------------------- pantallas
+const CLAVE_BIENVENIDA = 'ignis-bienvenida';
+function bienvenida() {
+  app.innerHTML = `
+  <main class="pantalla bienvenida">
+    <span class="bv-region">Guanajuato</span>
+    <div class="bv-centro">
+      <img src="${BASE}icono.png" alt="" class="bv-icono">
+      <img src="${BASE}wordmark.png" alt="IGNIS" class="bv-marca">
+      <p>Reporte ciudadano de incendios forestales y de pastizal</p>
+    </div>
+    <div class="bv-pie">
+      <button class="boton" id="comenzar" type="button">Comenzar</button>
+      <div class="bv-credito"><img src="${BASE}geoug.png" alt=""><span>Desarrollado por <b>GEO UG Developers</b></span></div>
+      <span class="bv-credito">Universidad de Guanajuato · GeoUG</span>
+    </div>
+  </main>`;
+  document.getElementById('comenzar')!.addEventListener('click', () => {
+    try { localStorage.setItem(CLAVE_BIENVENIDA, '1'); } catch { /* */ }
+    location.hash = '#/inicio'; if (location.hash === '#/inicio') ir();
+  });
+}
+function vioBienvenida() { try { return localStorage.getItem(CLAVE_BIENVENIDA) === '1'; } catch { return true; } }
+
 function inicio() {
+  if (!vioBienvenida()) { bienvenida(); return; }
   app.innerHTML = `
   <main class="pantalla con-nav">
     <header class="cab">
@@ -396,7 +420,7 @@ function info() {
 }
 
 // ---------------------------------------------------------------- rutas
-const RUTAS: Record<string, () => void> = { inicio, foto, ubicacion, enviado, mis, mapa: mapaVista, info };
+const RUTAS: Record<string, () => void> = { bienvenida, inicio, foto, ubicacion, enviado, mis, mapa: mapaVista, info };
 function ir() {
   limpiar();
   const ruta = location.hash.replace(/^#\/?/, '') || 'inicio';

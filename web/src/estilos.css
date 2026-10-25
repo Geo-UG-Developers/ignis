@@ -178,3 +178,18 @@ button { font: inherit; }
 .riesgo-datos span { display: flex; align-items: center; gap: 4px; color: var(--tenue); font-size: 12px; }
 .riesgo-datos b { font-size: 15px; font-weight: 600; }
 .riesgo-nota { margin: 0; color: var(--tenue); font-size: 12px; line-height: 1.4; }
+
+/* Pantalla de bienvenida (primera vez) */
+.bienvenida { min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
+  justify-content: space-between; padding: 56px 24px 32px; text-align: center;
+  background: radial-gradient(circle at 50% 36%, #FFFFFF 0%, #FFFFFF 38%, var(--fondo) 100%); }
+.bv-region { font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--tenue); }
+.bv-centro { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.bv-icono { width: 96px; height: auto; }
+.bv-marca { width: 200px; height: auto; }
+.bv-centro p { margin: 0; max-width: 280px; color: var(--tenue); font-size: 17px; line-height: 1.45; }
+.bv-pie { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.bv-pie .boton { width: 100%; margin-bottom: 10px; }
+.bv-credito { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--tenue); }
+.bv-credito img { width: 13px; height: auto; }
+.bv-credito b { font-weight: 600; color: #1F4D3A; }
