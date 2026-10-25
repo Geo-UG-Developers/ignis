@@ -130,7 +130,7 @@ begin
   select count(*) into n from incidentes;      -- RLS: no es personal del panel
   assert n = 0, 'ciudadano no ve incidentes por tabla';
   begin perform cambiar_estado_panel(gen_random_uuid(), 'recibido'); exception when others then msg := sqlerrm; end;
-  assert msg = 'sin_permiso', 'ciudadano no cambia estados';
+  assert msg = 'sin_permiso' or msg like 'permission denied%', 'ciudadano no cambia estados: ' || coalesce(msg, 'null');
   raise notice 'OK 8b ciudadano autenticado';
 end $$;
 reset role;
@@ -200,5 +200,49 @@ begin
   assert msg = 'tiempo_vencido', 'después de 2 min no se deshace';
   raise notice 'OK 10 deshacer';
 end $$;
+
+-- 11. Avisos pendientes y panel.
+do $$
+declare n int; p record; ids bigint[];
+begin
+  -- Los cierres recientes no se avisan todavía; los demás sí, una sola vez.
+  select count(*) into n from avisos_pendientes() where es_cierre(estado) and incidente_id in
+    (select incidente_id from eventos_estado where creado_en > now() - interval '1 minute');
+  assert n = 0, 'cierres recientes esperan';
+  select array_agg(evento_id) into ids from avisos_pendientes();
+  perform marcar_avisados(ids);
+  select count(*) into n from avisos_pendientes();
+  assert n = 0, 'no se repiten avisos';
+  raise notice 'OK 11a avisos';
+end $$;
+set role authenticated;
+select set_config('request.jwt.claim.sub', '44444444-4444-4444-8444-444444444444', false);
+do $$
+declare yo jsonb; n int; d jsonb; e jsonb;
+begin
+  yo := panel_yo();
+  assert yo->>'institucion' like 'Bomberos%' and (yo->>'es_admin')::boolean, 'panel_yo: ' || yo::text;
+  select count(*) into n from panel_incidentes(now() - interval '1 day');
+  assert n >= 2, 'panel ve sus incidentes: ' || n;
+  select panel_detalle(id) into d from panel_incidentes() limit 1;
+  assert jsonb_array_length(d->'reportes') >= 1 and d ? 'eventos', 'detalle completo';
+  e := panel_estadisticas();
+  assert (e->>'total')::int >= 2, 'estadísticas: ' || e::text;
+  assert jsonb_array_length(panel_historico_resumen()) >= 10, 'histórico por año y tipo';
+  raise notice 'OK 11b panel';
+end $$;
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', false);
+do $$
+declare n int;
+begin
+  assert panel_yo() is null, 'ciudadano no es personal';
+  select count(*) into n from panel_incidentes();
+  assert n = 0, 'ciudadano no ve incidentes en el panel';
+  assert panel_estadisticas() is null, 'ni estadísticas';
+  raise notice 'OK 11c panel cerrado a ciudadanos';
+end $$;
+reset role;
 
 select 'TODAS LAS PRUEBAS PASARON' as resultado;

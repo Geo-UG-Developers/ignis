@@ -15,3 +15,12 @@ verify_jwt = false
 
 [functions.reportar]
 verify_jwt = false
+
+[functions.tareas]
+verify_jwt = false
+
+[functions.avisos]
+verify_jwt = false
+
+[functions.panel]
+verify_jwt = false

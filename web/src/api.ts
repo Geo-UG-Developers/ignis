@@ -96,3 +96,46 @@ export async function historicoPublico(desde = 2021, hasta = 2100): Promise<Punt
     if (!data || data.length < 1000) return todos;
   }
 }
+
+// ---------------------------------------------------------------- avisos (web push)
+export type EstadoAvisos = 'activos' | 'apagados' | 'bloqueados' | 'no_soportado' | 'instalar_ios';
+
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const instalada = () => matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
+
+export async function registrarServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    try { await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`); } catch { /* sin avisos */ }
+  }
+}
+
+export async function estadoAvisos(): Promise<EstadoAvisos> {
+  if (esIOS() && !instalada()) return 'instalar_ios';
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'no_soportado';
+  if (Notification.permission === 'denied') return 'bloqueados';
+  const reg = await navigator.serviceWorker.getRegistration();
+  const sub = await reg?.pushManager.getSubscription();
+  return sub && Notification.permission === 'granted' ? 'activos' : 'apagados';
+}
+
+const aBytes = (b64: string) => {
+  const s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice(0, (4 - (b64.length % 4)) % 4));
+  return Uint8Array.from(s, (c) => c.charCodeAt(0));
+};
+
+/** Pide permiso, suscribe el navegador y guarda la suscripción en el servidor. */
+export async function activarAvisos(): Promise<EstadoAvisos> {
+  await asegurarSesion();
+  const permiso = await Notification.requestPermission();
+  if (permiso !== 'granted') return permiso === 'denied' ? 'bloqueados' : 'apagados';
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/avisos`, { headers: { apikey: SUPABASE_KEY } });
+    const { publicKey } = await r.json();
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(publicKey) });
+  }
+  const { error } = await db.rpc('registrar_push', { p_token: JSON.stringify(sub), p_plataforma: 'web' });
+  if (error) throw error;
+  return 'activos';
+}

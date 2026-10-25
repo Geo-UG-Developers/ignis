@@ -4,7 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { I } from './iconos';
 import {
-  asegurarSesion, comprimir, enviarReporte, historicoPublico, incidentesPublicos, misReportes,
+  activarAvisos, asegurarSesion, comprimir, enviarReporte, estadoAvisos, historicoPublico, incidentesPublicos, misReportes,
+  registrarServiceWorker,
   type Estado, type MiReporte, type Respuesta, type Tipo,
 } from './api';
 
@@ -80,6 +81,27 @@ function aviso(txt: string) {
   t.className = 'toast'; t.role = 'status'; t.textContent = txt;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 4000);
+}
+
+const TEXTO_AVISOS: Record<string, string> = {
+  apagados: 'Activa los avisos y te diremos cuando la autoridad reciba tu reporte y cuando el incendio se apague.',
+  bloqueados: 'Los avisos están bloqueados para este sitio. Actívalos en la configuración del navegador.',
+  no_soportado: 'Este navegador no permite avisos. Consulta el estado en «Mis reportes».',
+  instalar_ios: 'En iPhone: toca Compartir y luego «Agregar a inicio». Abre IGNIS desde ese ícono para activar los avisos.',
+};
+function tarjetaAvisos(cajaId: string) {
+  estadoAvisos().then((e) => {
+    const caja = document.getElementById(cajaId);
+    if (!caja || e === 'activos') return;
+    caja.innerHTML = `<section class="tarjeta avisos"><div><b>Recibe avisos en tu teléfono</b><p>${TEXTO_AVISOS[e]}</p></div>
+      ${e === 'apagados' ? '<button class="boton chico" id="btn-avisos">Activar avisos</button>' : ''}</section>`;
+    document.getElementById('btn-avisos')?.addEventListener('click', async () => {
+      try {
+        const r = await activarAvisos();
+        if (r === 'activos') { caja.innerHTML = ''; aviso('Listo: te avisaremos de cada cambio.'); } else tarjetaAvisos(cajaId);
+      } catch { aviso('No se pudieron activar los avisos. Inténtalo de nuevo.'); }
+    });
+  }).catch(() => {});
 }
 
 // ---------------------------------------------------------------- pantallas
@@ -249,6 +271,7 @@ function enviado() {
     <span class="folio">Folio ${esc(u.folio)}</span>
     <section class="tarjeta"><span class="tenue">Se notificó a</span>
       <div class="chips">${u.instituciones.length ? u.instituciones.map((n) => `<span>${esc(n)}</span>`).join('') : '<span>Aún no hay institución registrada para esta zona</span>'}</div></section>
+    <div id="caja-avisos"></div>
     <section class="tarjeta"><h2>Seguimiento</h2><div id="linea">${lineaTiempo(null, u.estado)}</div></section>
     <a class="emergencia ambar" href="tel:911">${I.tel(18)} Aléjate del humo. Emergencias: <b>911</b></a>
     <div class="pie dos"><a class="boton claro" href="#/mis">Mis reportes</a><a class="boton negro" href="#/inicio">Listo</a></div>
@@ -261,6 +284,7 @@ function enviado() {
       if (caja && r) caja.innerHTML = lineaTiempo(r, u.estado);
     } catch { /* se reintenta en el siguiente ciclo */ }
   };
+  tarjetaAvisos('caja-avisos');
   actualizar();
   sondeo = window.setInterval(actualizar, 5000);
 }
@@ -270,6 +294,7 @@ function mis() {
   <main class="pantalla con-nav">
     <h1 class="grande">Mis reportes</h1>
     <p class="sub">Sigue en qué va cada reporte que enviaste desde este teléfono.</p>
+    <div id="caja-avisos"></div>
     <div id="mis" class="lista"><p class="tenue">Cargando…</p></div>
     <a class="boton linea-roja" href="#/foto">${I.mas(18)} Nuevo reporte</a>
   </main>${nav('mis')}`;
@@ -284,6 +309,7 @@ function mis() {
         : '<p class="tenue">Todavía no has enviado reportes.</p>';
     } catch { const c = document.getElementById('mis'); if (c) c.innerHTML = '<p class="tenue">Sin conexión con el servidor.</p>'; }
   };
+  tarjetaAvisos('caja-avisos');
   pintar();
   sondeo = window.setInterval(pintar, 8000);
 }
@@ -355,3 +381,4 @@ function ir() {
 window.addEventListener('hashchange', ir);
 ir();
 asegurarSesion().catch(() => aviso('No hay conexión con el servidor. Algunas funciones no estarán disponibles.'));
+registrarServiceWorker();

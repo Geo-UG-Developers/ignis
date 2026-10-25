@@ -2,6 +2,7 @@
 import { db, secretoWebhook, tg } from '../_shared/servicios.ts';
 import { ES_CIERRE, ETIQUETA_ESTADO, ETIQUETA_TIPO, escapar, leerBoton, leerComando, tecladoConfirmar, type Estado } from '../_shared/mensajes.ts';
 import { actualizarAlertas, datosAlerta } from '../_shared/alerta.ts';
+import { enviarAvisos } from '../_shared/avisos.ts';
 
 const AYUDA = [
   '<b>IGNIS · alertas de incendios</b>',
@@ -85,6 +86,7 @@ async function boton(q: any) {
     if (error) return contestar(ERRORES[error.message] ?? 'No se pudo cambiar el estado.', true);
     await contestar(`Marcado: ${ETIQUETA_ESTADO[estado]}. Tienes 2 minutos para deshacerlo.`);
     await actualizarAlertas(a.incidenteId);
+    await enviarAvisos();   // los cierres esperan 2 minutos; la tarea de cada minuto los manda
   };
 
   switch (a.tipo) {
