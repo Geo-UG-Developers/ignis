@@ -1,0 +1,8 @@
+Ref del proyecto: 40 caracteres, empieza con http
+NotFound: FileSystem.readFile (/home/runner/.supabase/profile)
+Using access token from env var...
+Supabase CLI 2.122.0
+Using profile: supabase (supabase.co)
+Using access token from env var...
+Cannot resolve "https://omxujxhbvdkvnfrgtvqa.supabase.co": it is not a project ref (refs are exactly 20 lowercase letters, like `abcdefghijklmnopqrst`), so it was treated as a branch name — but no project is linked to search for branches.
+  If it is a branch name, link the parent project first: supabase link --project-ref <parent-ref>
