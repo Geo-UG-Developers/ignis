@@ -82,3 +82,11 @@ export async function comprimir(archivo: File): Promise<Blob> {
   c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
   return await new Promise((ok) => c.toBlob((b) => ok(b!), 'image/jpeg', 0.8));
 }
+
+export interface PuntoHistorico { anio: number; mes: number; tipo: Tipo; municipio: string | null; lat: number; lon: number; confiable: boolean; }
+
+export async function historicoPublico(desde = 2021, hasta = 2100): Promise<PuntoHistorico[]> {
+  const { data, error } = await db.rpc('historico_publico', { p_desde: desde, p_hasta: hasta });
+  if (error) throw error;
+  return (data ?? []) as PuntoHistorico[];
+}

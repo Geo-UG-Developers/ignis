@@ -131,8 +131,16 @@ button { font: inherit; }
 .reporte b, .reporte span { display: block; }
 
 .mapa-completo { position: fixed; inset: 0 0 var(--nav) 0; }
-.leyenda { position: fixed; top: 12px; left: 12px; z-index: 500; background: #fff; border-radius: 12px; padding: 8px 10px;
+.panel-mapa { position: fixed; top: 12px; left: 12px; right: 12px; z-index: 500; display: flex; flex-direction: column; gap: 8px;
+  align-items: flex-start; pointer-events: none; }
+.panel-mapa > * { pointer-events: auto; }
+.leyenda { background: #fff; border-radius: 12px; padding: 8px 10px;
   display: flex; flex-direction: column; gap: 4px; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+.filtros button { border: 0; background: #fff; color: var(--tinta); font-weight: 600; font-size: 13px; padding: 8px 12px; min-height: 36px;
+  border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.15); cursor: pointer; }
+.filtros button.on { background: var(--tinta); color: #fff; }
+.c-hist { background: #E2611D; opacity: .7; }
 .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
 .c-rojo { background: var(--rojo); } .c-verde { background: var(--verde); }
 

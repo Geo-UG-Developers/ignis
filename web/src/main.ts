@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { I } from './iconos';
 import {
-  asegurarSesion, comprimir, enviarReporte, incidentesPublicos, misReportes,
+  asegurarSesion, comprimir, enviarReporte, historicoPublico, incidentesPublicos, misReportes,
   type Estado, type MiReporte, type Respuesta, type Tipo,
 } from './api';
 
@@ -288,15 +288,39 @@ function mis() {
   sondeo = window.setInterval(pintar, 8000);
 }
 
+let anioHistorico = 0;   // 0 = capa apagada; 1 = todos los años
 function mapaVista() {
+  const anios = [2021, 2022, 2023, 2024, 2025];
   app.innerHTML = `
   <main class="pantalla sin-relleno con-nav">
     <div id="mapa" class="mapa-completo"></div>
-    <div class="leyenda"><span><i class="c-rojo"></i>Activo</span><span><i class="c-verde"></i>Controlado o extinguido</span></div>
+    <div class="panel-mapa">
+      <div class="leyenda"><span><i class="c-rojo"></i>Activo</span><span><i class="c-verde"></i>Controlado o extinguido</span>
+        ${anioHistorico ? '<span><i class="c-hist"></i>Histórico (reportes 2021–2025)</span>' : ''}</div>
+      <div class="filtros" role="group" aria-label="Capa histórica">
+        <button data-anio="0" class="${anioHistorico === 0 ? 'on' : ''}">Solo actuales</button>
+        <button data-anio="1" class="${anioHistorico === 1 ? 'on' : ''}">Histórico</button>
+        ${anioHistorico ? anios.map((a) => `<button data-anio="${a}" class="${anioHistorico === a ? 'on' : ''}">${a}</button>`).join('') : ''}
+      </div>
+    </div>
   </main>${nav('mapa')}`;
-  mapa = L.map('mapa', { zoomControl: false }).setView([21.0190, -101.2574], 9);
+  app.querySelectorAll<HTMLButtonElement>('[data-anio]').forEach((b) => b.addEventListener('click', () => {
+    anioHistorico = Number(b.dataset.anio); limpiar(); mapaVista();
+  }));
+  mapa = L.map('mapa', { zoomControl: false }).setView([20.85, -101.1], 8);
   mapa.attributionControl.setPrefix(false);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapa);
+  if (anioHistorico) {
+    const [desde, hasta] = anioHistorico === 1 ? [2021, 2100] : [anioHistorico, anioHistorico];
+    historicoPublico(desde, hasta).then((xs) => {
+      const capa = L.layerGroup().addTo(mapa!);
+      for (const x of xs.filter((p) => p.confiable)) {
+        L.circleMarker([x.lat, x.lon], { radius: 4, stroke: false, fillColor: '#E2611D', fillOpacity: 0.55 })
+          .bindPopup(`<b>${esc(NOMBRE_TIPO[x.tipo])}</b><br>${esc(x.municipio ?? '')} · ${x.mes}/${x.anio}`).addTo(capa);
+      }
+      aviso(`${xs.filter((p) => p.confiable).length} reportes históricos en el mapa`);
+    }).catch(() => aviso('No se pudo cargar el histórico.'));
+  }
   incidentesPublicos().then((xs) => {
     for (const x of xs) {
       const activo = !['controlado', 'extinguido'].includes(x.estado);
