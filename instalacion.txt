@@ -4,21 +4,16 @@ Using access token from env var...
 Supabase CLI 2.122.0
 Using profile: supabase (supabase.co)
 Using access token from env var...
-2026/10/25 09:54:48 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa
-2026/10/25 09:54:48 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/api-keys
-2026/10/25 09:54:49 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/storage
-2026/10/25 09:54:49 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/database/pooler
-2026/10/25 09:54:49 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/rest/v1/
-2026/10/25 09:54:51 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/auth/v1/health
-2026/10/25 09:54:51 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/storage/v1/version
+2026/10/25 09:58:12 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa
+2026/10/25 09:58:13 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/api-keys
+2026/10/25 09:58:13 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/storage
+2026/10/25 09:58:14 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/config/database/pooler
+2026/10/25 09:58:14 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/rest/v1/
+2026/10/25 09:58:15 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/auth/v1/health
+2026/10/25 09:58:15 HTTP GET: https://omxujxhbvdkvnfrgtvqa.supabase.co/storage/v1/version
 Finished supabase link.
 Connecting to remote database...
-Do you want to push these migrations to the remote database?
- • 20261025000400_telegram.sql
- [Y/n] y
-Applying migration 20261025000400_telegram.sql...
-Seed files are up to date.
-Finished supabase db push.
+Remote database is up to date.
 Deploying Function: reportar
 Uploading asset (reportar): supabase/functions/reportar/index.ts
 Uploading asset (reportar): supabase/functions/_shared/alerta.ts
@@ -31,4 +26,11 @@ Uploading asset (telegram): supabase/functions/_shared/mensajes.ts
 Uploading asset (telegram): supabase/functions/_shared/servicios.ts
 Deployed Functions on project omxujxhbvdkvnfrgtvqa: reportar, telegram
 You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/omxujxhbvdkvnfrgtvqa/functions
-Falta el secreto TELEGRAM_BOT_TOKEN
+│
+◇  Setting secrets...
+Finished supabase secrets set.
+--- Bot
+{"ok":true,"result":{"id":8489504527,"is_bot":true,"first_name":"IGNIS Pruebas","username":"IGNIS_Pruebas_bot","can_join_groups":true,"can_read_all_group_messages":false,"supports_inline_queries":false,"supports_guest_queries":false,"can_connect_to_business":false,"has_main_web_app":false,"has_topics_enabled":false,"allows_users_to_create_topics":false,"can_manage_bots":false,"supports_join_request_queries":false}}
+--- Webhook
+{"ok":true,"result":true,"description":"Webhook was set"}
+{"ok":true,"result":{"url":"https://omxujxhbvdkvnfrgtvqa.supabase.co/functions/v1/telegram","has_custom_certificate":false,"pending_update_count":0,"max_connections":40,"ip_address":"104.18.38.10","allowed_updates":["message","callback_query"]}}
