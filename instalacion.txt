@@ -1,8 +1,10 @@
-Ref del proyecto: 40 caracteres, empieza con http
+Ref del proyecto: 20 caracteres, empieza con omxu
 NotFound: FileSystem.readFile (/home/runner/.supabase/profile)
 Using access token from env var...
 Supabase CLI 2.122.0
 Using profile: supabase (supabase.co)
 Using access token from env var...
-Cannot resolve "https://omxujxhbvdkvnfrgtvqa.supabase.co": it is not a project ref (refs are exactly 20 lowercase letters, like `abcdefghijklmnopqrst`), so it was treated as a branch name — but no project is linked to search for branches.
-  If it is a branch name, link the parent project first: supabase link --project-ref <parent-ref>
+2026/10/25 09:10:13 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa
+2026/10/25 09:10:13 HTTP GET: https://api.supabase.com/v1/projects/omxujxhbvdkvnfrgtvqa/api-keys
+2026/10/25 09:10:13 HTTP GET: /v1/projects/omxujxhbvdkvnfrgtvqa
+Authorization failed for the access token and project ref pair: {"message":"Your account does not have the necessary privileges to access this endpoint. For more details, refer to our documentation https://supabase.com/docs/guides/platform/access-control"}
