@@ -161,3 +161,20 @@ button { font: inherit; }
 .avisos b { font-size: 15px; }
 .avisos p { margin: 4px 0 0; font-size: 13.5px; color: var(--tenue); line-height: 1.4; }
 .boton.chico { height: 44px; font-size: 15px; }
+
+/* Riesgo de incendio (estimado) */
+.riesgo { display: flex; flex-direction: column; gap: 12px; }
+.riesgo-cab { display: flex; justify-content: space-between; align-items: center; }
+.riesgo-cab > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.riesgo-nivel { font-family: Archivo, sans-serif; font-weight: 800; font-size: 22px; }
+.riesgo.n1 .riesgo-nivel { color: var(--verde); } .riesgo.n2 .riesgo-nivel { color: var(--ambar); }
+.riesgo.n3 .riesgo-nivel, .riesgo.n4 .riesgo-nivel, .riesgo.n5 .riesgo-nivel { color: var(--rojo-osc); }
+.riesgo-barras { display: flex; gap: 4px; align-items: flex-end; }
+.riesgo-barras i { width: 8px; border-radius: 3px; background: var(--borde); }
+.riesgo.n1 .riesgo-barras i.on { background: var(--verde); } .riesgo.n2 .riesgo-barras i.on { background: #B45309; }
+.riesgo.n3 .riesgo-barras i.on, .riesgo.n4 .riesgo-barras i.on, .riesgo.n5 .riesgo-barras i.on { background: var(--rojo); }
+.riesgo-datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.riesgo-datos div { background: var(--fondo); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.riesgo-datos span { display: flex; align-items: center; gap: 4px; color: var(--tenue); font-size: 12px; }
+.riesgo-datos b { font-size: 15px; font-weight: 600; }
+.riesgo-nota { margin: 0; color: var(--tenue); font-size: 12px; line-height: 1.4; }

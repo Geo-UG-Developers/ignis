@@ -8,6 +8,8 @@ import {
   registrarServiceWorker,
   type Estado, type MiReporte, type Respuesta, type Tipo,
 } from './api';
+import { riesgoHoy } from './riesgo';
+import { prepararSonido, sonarEnviado } from './sonido';
 
 const BASE = import.meta.env.BASE_URL;
 const app = document.getElementById('app')!;
@@ -118,6 +120,7 @@ function inicio() {
       <span class="ico"><img src="${BASE}icono_blanco.png" alt=""></span>
       <span><b>Reportar incendio</b><small>Foto · tipo · ubicación</small></span>
     </a>
+    <section class="tarjeta riesgo" id="riesgo" aria-live="polite"><p class="tenue">Calculando riesgo de incendio…</p></section>
     <section class="tarjeta">
       <div class="fila-tit"><h2>Activos en la región</h2><a href="#/mapa">Ver mapa</a></div>
       <div id="activos" class="lista-mini"><p class="tenue">Cargando…</p></div>
@@ -130,6 +133,26 @@ function inicio() {
       ? abiertos.map((x) => `<div class="mini"><b>${esc(NOMBRE_TIPO[x.tipo])}</b><span>${esc(x.municipio ?? 'Sin municipio')} · ${hora(x.creado_en)}</span><em class="pill ${ESTADO[x.estado].cls}">${ESTADO[x.estado].txt}</em></div>`).join('')
       : '<p class="tenue">No hay incendios activos reportados.</p>';
   }).catch(() => { document.getElementById('activos')!.innerHTML = '<p class="tenue">Sin conexión con el servidor.</p>'; });
+  pintarRiesgo();
+}
+
+function pintarRiesgo() {
+  riesgoHoy().then((r) => {
+    const caja = document.getElementById('riesgo'); if (!caja) return;
+    const barras = [1, 2, 3, 4, 5].map((i) => `<i class="${i <= r.nivel ? 'on' : ''}" style="height:${6 + i * 5}px"></i>`).join('');
+    caja.className = `tarjeta riesgo n${r.nivel}`;
+    caja.innerHTML = `
+      <div class="riesgo-cab">
+        <div><span class="tenue">Riesgo de incendio hoy · ${r.lugar}</span><b class="riesgo-nivel">${r.texto}</b></div>
+        <div class="riesgo-barras" role="img" aria-label="Nivel ${r.nivel} de 5">${barras}</div>
+      </div>
+      <div class="riesgo-datos">
+        <div><span>${I.viento(14)} Viento</span><b>${r.viento} km/h</b></div>
+        <div><span>${I.gota(14)} Humedad</span><b>${r.humedad} %</b></div>
+        <div><span>${I.termo(14)} Temp.</span><b>${r.temp} °C</b></div>
+      </div>
+      <p class="riesgo-nota">Estimación con el clima actual${r.lluvia3d ? ` y ${r.lluvia3d} mm de lluvia en 3 días` : ''}. No es un aviso oficial. Datos: Open-Meteo.</p>`;
+  }).catch(() => { document.getElementById('riesgo')?.remove(); });
 }
 
 function foto() {
@@ -228,6 +251,7 @@ function ubicacion() {
   boton.addEventListener('click', async () => {
     if (!borrador.tieneUbicacion) { aviso('Toca el mapa en el lugar del incendio o activa tu ubicación.'); return; }
     boton.disabled = true; boton.textContent = 'Enviando…';
+    prepararSonido();
     try {
       const r = await enviarReporte({
         tipo: borrador.tipo, lat: borrador.lat, lon: borrador.lon, precision: borrador.precision,
@@ -236,6 +260,7 @@ function ubicacion() {
       ultimo = { ...r, enviado_en: Date.now() };
       borrador.fotos.forEach((f) => URL.revokeObjectURL(f.url));
       Object.assign(borrador, { fotos: [], comentario: '', tieneUbicacion: false, precision: 0 });
+      sonarEnviado();
       location.hash = '#/enviado';
     } catch (e) {
       const m = (e as Error).message;

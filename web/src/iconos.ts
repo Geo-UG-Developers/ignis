@@ -23,5 +23,8 @@ export const I = {
   pasto: (n?: number) => s('<path d="M4 20c1-5 2-8 4-11M10 20c0-5 1-9 2-13M14 20c0-4 1-7 3-10M20 20c-1-4-2-6-4-8"/><path d="M2 20h20"/>', n),
   campo: (n?: number) => s('<path d="M3 20h18"/><path d="M6 20v-5M10 20v-7M14 20v-5M18 20v-7"/><path d="M12 9c-1.5-1.2-1.5-3 0-5 1.5 2 1.5 3.8 0 5z"/>', n),
   basura: (n?: number) => s('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M12 11c-1 1-1.5 2-1 3.2.3.8 1 1.3 1 2.3.8-.5 2-1.6 1.6-3.2-.2-.9-1-1.5-1.6-2.3z"/>', n),
+  viento: (n?: number) => s('<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>', n),
+  gota: (n?: number) => s('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>', n),
+  termo: (n?: number) => s('<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>', n),
   nube: (n?: number) => s('<path d="M7 18a4 4 0 0 1-.6-8 6 6 0 0 1 11.6 1.5A3.5 3.5 0 0 1 17.5 18z"/><path d="M12 15v-4M10 13l2-2 2 2"/>', n),
 };
