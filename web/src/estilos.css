@@ -193,3 +193,9 @@ button { font: inherit; }
 .bv-credito { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--tenue); }
 .bv-credito img { width: 13px; height: auto; }
 .bv-credito b { font-weight: 600; color: #1F4D3A; }
+
+/* Textos legales */
+.legal { margin: 8px 0 0; font-size: 12.5px; color: var(--tenue); text-align: center; }
+.legal a { color: var(--rojo-osc); font-weight: 600; }
+.legal-texto { display: flex; flex-direction: column; gap: 8px; } .legal-texto h2 { margin: 0; font-family: Archivo, sans-serif; font-size: 24px; }
+.legal-texto h3 { margin: 10px 0 0; font-size: 17px; } .legal-texto p, .legal-texto li { margin: 0; font-size: 15px; line-height: 1.55; } .legal-texto ul { margin: 0; padding-left: 20px; }

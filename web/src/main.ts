@@ -10,6 +10,7 @@ import {
 } from './api';
 import { riesgoHoy } from './riesgo';
 import { prepararSonido, sonarEnviado } from './sonido';
+import { PRIVACIDAD, TERMINOS } from './legal';
 
 const BASE = import.meta.env.BASE_URL;
 const app = document.getElementById('app')!;
@@ -121,6 +122,7 @@ function bienvenida() {
       <button class="boton" id="comenzar" type="button">Comenzar</button>
       <div class="bv-credito"><img src="${BASE}geoug.png" alt=""><span>Desarrollado por <b>GEO UG Developers</b></span></div>
       <span class="bv-credito">Universidad de Guanajuato · GeoUG</span>
+      <p class="legal">Al continuar aceptas los <a href="#/terminos">términos de uso</a> y el <a href="#/privacidad">aviso de privacidad</a>.</p>
     </div>
   </main>`;
   document.getElementById('comenzar')!.addEventListener('click', () => {
@@ -234,7 +236,8 @@ function ubicacion() {
       <textarea id="comentario" maxlength="500" placeholder="Ej. el humo viene del cerro, cerca de la carretera">${esc(borrador.comentario)}</textarea></label>
     <label class="campo"><span>Tu nombre <span class="tenue">(opcional)</span></span>
       <input id="nombre" maxlength="120" placeholder="Puedes reportar de forma anónima" value="${esc(borrador.nombre)}"></label>
-    <div class="pie"><button class="boton" id="enviar">${I.enviar(20)} Enviar reporte</button></div>
+    <div class="pie"><button class="boton" id="enviar">${I.enviar(20)} Enviar reporte</button>
+      <p class="legal">Tus datos se usan solo para atender el incendio. <a href="#/privacidad">Aviso de privacidad</a></p></div>
   </main>`;
   const centro: L.LatLngTuple = borrador.tieneUbicacion ? [borrador.lat, borrador.lon] : [21.0190, -101.2574];
   mapa = L.map('mapa', { zoomControl: false, attributionControl: true }).setView(centro, borrador.tieneUbicacion ? 15 : 12);
@@ -415,12 +418,19 @@ function info() {
     <a class="emergencia fuerte" href="tel:911">${I.tel(20)} <span><b>Emergencia: llama al 911</b><small>IGNIS no sustituye al servicio de emergencias</small></span></a>
     <section class="tarjeta"><h2>Reporta de forma segura</h2>
       <ul class="puntos"><li>No te acerques al fuego para tomar la foto.</li><li>Aléjate del humo y ponte a salvo primero.</li><li>Si el fuego está cerca de casas, llama al 911.</li></ul></section>
+    <p class="legal"><a href="#/privacidad">Aviso de privacidad</a> · <a href="#/terminos">Términos de uso</a></p>
     <p class="tenue centrado">Versión piloto · Guanajuato</p>
   </main>${nav('info')}`;
 }
+function legal(cual: 'privacidad' | 'terminos') {
+  app.innerHTML = `<main class="pantalla">
+    <header class="cab"><a class="redondo" href="#/info" aria-label="Volver">${I.atras(20)}</a><span></span></header>
+    <article class="tarjeta legal-texto">${cual === 'privacidad' ? PRIVACIDAD : TERMINOS}</article>
+    <p class="legal"><a href="#/${cual === 'privacidad' ? 'terminos' : 'privacidad'}">${cual === 'privacidad' ? 'Ver términos de uso' : 'Ver aviso de privacidad'}</a></p></main>`;
+}
 
 // ---------------------------------------------------------------- rutas
-const RUTAS: Record<string, () => void> = { bienvenida, inicio, foto, ubicacion, enviado, mis, mapa: mapaVista, info };
+const RUTAS: Record<string, () => void> = { privacidad: () => legal('privacidad'), terminos: () => legal('terminos'), bienvenida, inicio, foto, ubicacion, enviado, mis, mapa: mapaVista, info };
 function ir() {
   limpiar();
   const ruta = location.hash.replace(/^#\/?/, '') || 'inicio';
