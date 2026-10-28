@@ -108,6 +108,7 @@ function tarjetaAvisos(cajaId: string) {
 }
 
 // ---------------------------------------------------------------- pantallas
+// La pantalla de inicio aparece cada vez que se abre la app (sessionStorage se borra al cerrarla).
 const CLAVE_BIENVENIDA = 'ignis-bienvenida';
 function bienvenida() {
   app.innerHTML = `
@@ -126,11 +127,11 @@ function bienvenida() {
     </div>
   </main>`;
   document.getElementById('comenzar')!.addEventListener('click', () => {
-    try { localStorage.setItem(CLAVE_BIENVENIDA, '1'); } catch { /* */ }
+    try { sessionStorage.setItem(CLAVE_BIENVENIDA, '1'); } catch { /* */ }
     location.hash = '#/inicio'; if (location.hash === '#/inicio') ir();
   });
 }
-function vioBienvenida() { try { return localStorage.getItem(CLAVE_BIENVENIDA) === '1'; } catch { return true; } }
+function vioBienvenida() { try { return sessionStorage.getItem(CLAVE_BIENVENIDA) === '1'; } catch { return true; } }
 
 function inicio() {
   if (!vioBienvenida()) { bienvenida(); return; }

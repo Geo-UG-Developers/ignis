@@ -8,7 +8,7 @@ self.addEventListener('push', (e) => {
   e.waitUntil(self.registration.showNotification(d.titulo || 'IGNIS', {
     body: d.cuerpo || '',
     icon: 'icon-192.png',
-    badge: 'favicon.png',
+    badge: 'favicon-ignis.png',
     tag: d.etiqueta || 'ignis',
     renotify: true,
     data: { url: d.url || '#/mis' },
